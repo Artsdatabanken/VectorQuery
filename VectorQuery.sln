@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VectorQuery", "VectorQuery\VectorQuery.csproj", "{5C3AEA0A-4826-497A-B01C-6CA7885E3D36}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{0054A111-E6A1-4F37-B939-EEC1401C6772}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5C3AEA0A-4826-497A-B01C-6CA7885E3D36}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C3AEA0A-4826-497A-B01C-6CA7885E3D36}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C3AEA0A-4826-497A-B01C-6CA7885E3D36}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C3AEA0A-4826-497A-B01C-6CA7885E3D36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0054A111-E6A1-4F37-B939-EEC1401C6772}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0054A111-E6A1-4F37-B939-EEC1401C6772}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0054A111-E6A1-4F37-B939-EEC1401C6772}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0054A111-E6A1-4F37-B939-EEC1401C6772}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AFA09B0F-97C7-488F-A79E-954F565F1E9D}
+	EndGlobalSection
+EndGlobal

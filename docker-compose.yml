@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  vectorquery:
+    image: ${DOCKER_REGISTRY}vectorquery
+    build:
+      context: .
+      dockerfile: VectorQuery/Dockerfile
