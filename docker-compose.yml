@@ -6,3 +6,12 @@ services:
     build:
       context: .
       dockerfile: VectorQuery/Dockerfile
+    links:
+    - bigbadabom
+  bigbadabom:
+    container_name: bigbadabom
+    image: artsdatabanken/bigbadabom
+    environment: 
+      POSTGRES_PASSWORD: mysecretpassword
+    volumes:
+    - D:/Artsdatabanken/Data/bigbadabom:/data

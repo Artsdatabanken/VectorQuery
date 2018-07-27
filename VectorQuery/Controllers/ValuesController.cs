@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
+using Npgsql;
 
 namespace VectorQuery.Controllers
 {
@@ -10,36 +8,77 @@ namespace VectorQuery.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        // GET api/values
-        [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
+        private static readonly Dictionary<string, string> CodesDictionary = new Dictionary<string, string>();
+
+        public ValuesController()
         {
-            return new string[] { "value1", "value2" };
+            var cmdCodes = GetCmd("SELECT code, title from data.codes c");
+
+            var dr = cmdCodes.ExecuteReader();
+
+            while (dr.Read())
+            {
+                CodesDictionary[dr[0].ToString()] = dr[1].ToString();
+            }
+
+            cmdCodes.Connection?.Close();
         }
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
+       private static NpgsqlCommand GetCmd(string sql)
         {
-            return "value";
+            var conn = new NpgsqlConnection(
+                "Server=bigbadabom;User Id=reader;Password=reader;Database=bigbadabom");
+
+            conn.Open();
+
+            return new NpgsqlCommand(sql, conn);
         }
 
-        // POST api/values
-        [HttpPost]
-        public void Post([FromBody] string value)
+        [HttpGet("{x}/{y}")]
+        public Dictionary<string, Code> Get(double x, double y)
         {
+            var cmd = GetCmd($"SELECT c.code, c.title FROM data.geometry g, data.codes_geometry c_g, data.codes c WHERE ST_Intersects(g.geography, ST_GeomFromText(\'POINT({x} {y})\', 4326)) and c_g.geometry_id = g.id and c_g.codes_id = c.id");
+
+            var dr = cmd.ExecuteReader();
+
+            var results = ReadResults(dr);
+
+            cmd.Connection?.Close();
+
+            return results;
         }
 
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        private static Dictionary<string, Code> ReadResults(NpgsqlDataReader dr)
         {
-        }
+            var results = new Dictionary<string, Code>();
 
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            while (dr.Read())
+            {
+                var code = dr[0].ToString();
+
+                string parentCode;
+
+                if (code.Split('_').Length < 3)
+                    parentCode = code.Split('-').Length > 1
+                        ? code.Split('-')[0]
+                        : code.Split('_')[0];
+
+                else parentCode = code.Split('_')[0] + '_' + code.Split('_')[1];
+
+                results[code] = new Code
+                {
+                    Value = dr[1].ToString(),
+                    Key =CodesDictionary[parentCode]
+                };
+            }
+            
+            return results;
         }
+    }
+
+    public class Code
+    {
+        public string Key;
+        public string Value;
     }
 }
