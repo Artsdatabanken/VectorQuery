@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using Microsoft.AspNetCore.Mvc;
-using Npgsql;
+using VectorQuery.Data;
 
 namespace VectorQuery.Controllers
 {
@@ -8,36 +9,11 @@ namespace VectorQuery.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        private static readonly Dictionary<string, string> CodesDictionary = new Dictionary<string, string>();
-
-        public ValuesController()
-        {
-            var cmdCodes = GetCmd("SELECT code, title from data.codes c");
-
-            var dr = cmdCodes.ExecuteReader();
-
-            while (dr.Read())
-            {
-                CodesDictionary[dr[0].ToString()] = dr[1].ToString();
-            }
-
-            cmdCodes.Connection?.Close();
-        }
-
-       private static NpgsqlCommand GetCmd(string sql)
-        {
-            var conn = new NpgsqlConnection(
-                "Server=vectorquery_bigbadabom;User Id=reader;Password=reader;Database=bigbadabom");
-
-            conn.Open();
-
-            return new NpgsqlCommand(sql, conn);
-        }
-
         [HttpGet("{x}/{y}")]
         public Dictionary<string, Code> Get(double x, double y)
         {
-            var cmd = GetCmd($"SELECT c.code, c.title FROM data.geometry g, data.codes_geometry c_g, data.codes c WHERE ST_Intersects(g.geography, ST_GeomFromText(\'POINT({x} {y})\', 4326)) and c_g.geometry_id = g.id and c_g.codes_id = c.id");
+            var cmd = Sql.GetCmd(
+                $"SELECT c.code, c.title FROM data.geometry g, data.codes_geometry c_g, data.codes c WHERE ST_Intersects(g.geography, ST_GeomFromText(\'POINT({x} {y})\', 4326)) and c_g.geometry_id = g.id and c_g.codes_id = c.id");
 
             var dr = cmd.ExecuteReader();
 
@@ -48,7 +24,7 @@ namespace VectorQuery.Controllers
             return results;
         }
 
-        private static Dictionary<string, Code> ReadResults(NpgsqlDataReader dr)
+        private static Dictionary<string, Code> ReadResults(IDataReader dr)
         {
             var results = new Dictionary<string, Code>();
 
@@ -68,17 +44,11 @@ namespace VectorQuery.Controllers
                 results[code] = new Code
                 {
                     Value = dr[1].ToString(),
-                    Key =CodesDictionary[parentCode]
+                    Key = Codes.Dictionary[parentCode]
                 };
             }
-            
+
             return results;
         }
-    }
-
-    public class Code
-    {
-        public string Key;
-        public string Value;
     }
 }
