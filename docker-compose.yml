@@ -18,3 +18,5 @@ services:
 
 volumes:
     vectorquery_bigbadabom:
+        external:
+          name: bigbadabom
