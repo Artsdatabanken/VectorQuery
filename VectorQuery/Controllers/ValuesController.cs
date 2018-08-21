@@ -27,7 +27,7 @@ namespace VectorQuery.Controllers
        private static NpgsqlCommand GetCmd(string sql)
         {
             var conn = new NpgsqlConnection(
-                "Server=bigbadabom;User Id=reader;Password=reader;Database=bigbadabom");
+                "Server=vectorquery_bigbadabom;User Id=reader;Password=reader;Database=bigbadabom");
 
             conn.Open();
 
