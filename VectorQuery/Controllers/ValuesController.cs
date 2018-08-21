@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 using Microsoft.AspNetCore.Mvc;
+using Npgsql;
 using VectorQuery.Data;
 
 namespace VectorQuery.Controllers
@@ -14,6 +15,21 @@ namespace VectorQuery.Controllers
         {
             var cmd = Sql.GetCmd(
                 $"SELECT c.code, c.title FROM data.geometry g, data.codes_geometry c_g, data.codes c WHERE ST_Intersects(g.geography, ST_GeomFromText(\'POINT({x} {y})\', 4326)) and c_g.geometry_id = g.id and c_g.codes_id = c.id");
+
+            return Execute(cmd);
+        }
+
+        [HttpGet("{minx}/{miny}/{maxx}/{maxy}")]
+        public Dictionary<string, Code> Get(double minx, double miny, double maxx, double maxy)
+        {
+            var cmd = Sql.GetCmd(
+                $"SELECT c.code, c.title FROM data.geometry g, data.codes_geometry c_g, data.codes c WHERE ST_Intersects(g.geography, ST_MakeEnvelope({minx},{miny},{maxx},{maxy}, 4326)) and c_g.geometry_id = g.id and c_g.codes_id = c.id");
+
+            return Execute(cmd);
+        }
+
+        private static Dictionary<string, Code> Execute(NpgsqlCommand cmd)
+        {
 
             var dr = cmd.ExecuteReader();
 
