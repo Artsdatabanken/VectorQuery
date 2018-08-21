@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Npgsql;
 
 namespace VectorQuery.Data
 {
@@ -18,6 +19,33 @@ namespace VectorQuery.Data
             }
 
             cmdCodes.Connection?.Close();
+        }
+
+        public static Dictionary<string, Code> ReadResults(NpgsqlDataReader dr)
+        {
+            var results = new Dictionary<string, Code>();
+
+            while (dr.Read())
+            {
+                var code = dr[0].ToString();
+
+                string parentCode;
+
+                if (code.Split('_').Length < 3)
+                    parentCode = code.Split('-').Length > 1
+                        ? code.Split('-')[0]
+                        : code.Split('_')[0];
+
+                else parentCode = code.Split('_')[0] + '_' + code.Split('_')[1];
+
+                results[code] = new Code
+                {
+                    Value = dr[1].ToString(),
+                    Key = Dictionary[parentCode]
+                };
+            }
+
+            return results;
         }
     }
 }

@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Data;
 using Microsoft.AspNetCore.Mvc;
-using Npgsql;
 using VectorQuery.Data;
 
 namespace VectorQuery.Controllers
@@ -13,58 +11,25 @@ namespace VectorQuery.Controllers
         [HttpGet("{x}/{y}")]
         public Dictionary<string, Code> Get(double x, double y)
         {
-            var cmd = Sql.GetCmd(
-                $"SELECT c.code, c.title FROM data.geometry g, data.codes_geometry c_g, data.codes c WHERE ST_Intersects(g.geography, ST_GeomFromText(\'POINT({x} {y})\', 4326)) and c_g.geometry_id = g.id and c_g.codes_id = c.id");
+            return Sql.GetIntersectingCodes(Sql.CreatePoint(x, y));
+        }
 
-            return Execute(cmd);
+        [HttpGet("{x}/{y}/{prefix}")]
+        public Dictionary<string, Code> Get(double x, double y, string prefix)
+        {
+            return Sql.GetIntersectingCodes(Sql.CreatePoint(x, y), prefix);
         }
 
         [HttpGet("{minx}/{miny}/{maxx}/{maxy}")]
         public Dictionary<string, Code> Get(double minx, double miny, double maxx, double maxy)
         {
-            var cmd = Sql.GetCmd(
-                $"SELECT c.code, c.title FROM data.geometry g, data.codes_geometry c_g, data.codes c WHERE ST_Intersects(g.geography, ST_MakeEnvelope({minx},{miny},{maxx},{maxy}, 4326)) and c_g.geometry_id = g.id and c_g.codes_id = c.id");
-
-            return Execute(cmd);
+            return Sql.GetIntersectingCodes(Sql.CreateArea(minx, miny, maxx, maxy));
         }
 
-        private static Dictionary<string, Code> Execute(NpgsqlCommand cmd)
+        [HttpGet("{minx}/{miny}/{maxx}/{maxy}/{prefix}")]
+        public Dictionary<string, Code> Get(double minx, double miny, double maxx, double maxy, string prefix)
         {
-
-            var dr = cmd.ExecuteReader();
-
-            var results = ReadResults(dr);
-
-            cmd.Connection?.Close();
-
-            return results;
-        }
-
-        private static Dictionary<string, Code> ReadResults(IDataReader dr)
-        {
-            var results = new Dictionary<string, Code>();
-
-            while (dr.Read())
-            {
-                var code = dr[0].ToString();
-
-                string parentCode;
-
-                if (code.Split('_').Length < 3)
-                    parentCode = code.Split('-').Length > 1
-                        ? code.Split('-')[0]
-                        : code.Split('_')[0];
-
-                else parentCode = code.Split('_')[0] + '_' + code.Split('_')[1];
-
-                results[code] = new Code
-                {
-                    Value = dr[1].ToString(),
-                    Key = Codes.Dictionary[parentCode]
-                };
-            }
-
-            return results;
+            return Sql.GetIntersectingCodes(Sql.CreateArea(minx, miny, maxx, maxy), prefix);
         }
     }
 }
