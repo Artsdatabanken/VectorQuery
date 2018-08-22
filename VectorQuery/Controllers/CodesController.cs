@@ -6,7 +6,7 @@ namespace VectorQuery.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ValuesController : ControllerBase
+    public class CodesController : ControllerBase
     {
         [HttpGet("{x}/{y}")]
         public Dictionary<string, Code> Get(double x, double y)

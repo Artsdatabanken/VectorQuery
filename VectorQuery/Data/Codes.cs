@@ -13,10 +13,7 @@ namespace VectorQuery.Data
 
             var dr = cmdCodes.ExecuteReader();
 
-            while (dr.Read())
-            {
-                Dictionary[dr[0].ToString()] = dr[1].ToString();
-            }
+            while (dr.Read()) Dictionary[dr[0].ToString()] = dr[1].ToString();
 
             cmdCodes.Connection?.Close();
         }
@@ -38,11 +35,19 @@ namespace VectorQuery.Data
 
                 else parentCode = code.Split('_')[0] + '_' + code.Split('_')[1];
 
-                results[code] = new Code
+
+                if (!results.ContainsKey(code))
                 {
-                    Value = dr[1].ToString(),
-                    Key = Dictionary[parentCode]
-                };
+                    results[code] = new Code
+                    {
+                        Value = dr[1].ToString(),
+                        Key = Dictionary[parentCode],
+                        Ids = new List<int> {int.Parse(dr[2].ToString())}
+                    };
+                }
+
+                else results[code].Ids.Add(int.Parse(dr[2].ToString()));
+
             }
 
             return results;
