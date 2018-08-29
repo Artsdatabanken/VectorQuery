@@ -4,7 +4,7 @@ using VectorQuery.Data;
 
 namespace VectorQuery.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("ogapi/[controller]")]
     [ApiController]
     public class CodesController : ControllerBase
     {
@@ -18,18 +18,6 @@ namespace VectorQuery.Controllers
         public Dictionary<string, Code> Get(double x, double y, string prefix)
         {
             return Sql.GetIntersectingCodes(Sql.CreatePoint(x, y), prefix);
-        }
-
-        [HttpGet("{minx}/{miny}/{maxx}/{maxy}")]
-        public Dictionary<string, Code> Get(double minx, double miny, double maxx, double maxy)
-        {
-            return Sql.GetIntersectingCodes(Sql.CreateArea(minx, miny, maxx, maxy));
-        }
-
-        [HttpGet("{minx}/{miny}/{maxx}/{maxy}/{prefix}")]
-        public Dictionary<string, Code> Get(double minx, double miny, double maxx, double maxy, string prefix)
-        {
-            return Sql.GetIntersectingCodes(Sql.CreateArea(minx, miny, maxx, maxy), prefix);
         }
     }
 }

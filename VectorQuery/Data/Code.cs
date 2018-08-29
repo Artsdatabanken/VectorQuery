@@ -6,6 +6,6 @@ namespace VectorQuery.Data
     {
         public string Key;
         public string Value;
-        public List<int> Ids;
+        public List<string> Ids;
     }
 }
