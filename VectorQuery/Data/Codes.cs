@@ -27,13 +27,15 @@ namespace VectorQuery.Data
                 var code = dr[0].ToString();
 
                 string parentCode;
+                var codeSplitUnderscore = code.Split('_');
+                var codeSplitDash = code.Split('-');
 
-                if (code.Split('_').Length < 3)
-                    parentCode = code.Split('-').Length > 1
-                        ? code.Split('-')[0]
-                        : code.Split('_')[0];
+                if (codeSplitUnderscore.Length < 3)
+                    parentCode = codeSplitDash.Length > 1
+                        ? codeSplitDash[0]
+                        : codeSplitUnderscore[0];
 
-                else parentCode = code.Split('_')[0] + '_' + code.Split('_')[1];
+                else parentCode = codeSplitUnderscore[0] + '_' + codeSplitUnderscore[1];
 
 
                 if (!results.ContainsKey(code))
