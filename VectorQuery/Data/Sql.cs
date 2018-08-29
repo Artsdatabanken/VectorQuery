@@ -1,18 +1,35 @@
 ﻿using Npgsql;
 using System.Collections.Generic;
+using System.IO;
+using Microsoft.Extensions.Configuration;
 
 namespace VectorQuery.Data
 {
     internal class Sql
     {
+        private static string ConnectionString { get; set; }
+
         public static NpgsqlCommand GetCmd(string sql)
         {
-            var conn = new NpgsqlConnection(
-                "Server=vectorquery_bigbadabom;User Id=reader;Password=reader;Database=bigbadabom");
+            CheckConnectionString();
+
+            var conn = new NpgsqlConnection(ConnectionString);
 
             conn.Open();
 
             return new NpgsqlCommand(sql, conn);
+        }
+
+        private static void CheckConnectionString()
+        {
+            if (!string.IsNullOrEmpty(ConnectionString)) return;
+
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
+            var configuration = builder.Build();
+            ConnectionString = configuration.GetConnectionString("postgres");
         }
 
         public static string CreateIntersectQuery(string queryGeometry)
