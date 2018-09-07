@@ -38,6 +38,8 @@ namespace VectorQuery.Data
                 else parentCode = codeSplitUnderscore[0] + '_' + codeSplitUnderscore[1];
 
                 var id = string.IsNullOrEmpty(dr[2].ToString()) ? dr[3].ToString() : dr[2].ToString().Replace("{", "").Replace("}", "");
+                
+                var fraction = string.IsNullOrEmpty(dr[4].ToString()) ? 10 : int.Parse(dr[4].ToString());
 
                 if (!results.ContainsKey(code))
                 {
@@ -45,7 +47,8 @@ namespace VectorQuery.Data
                     {
                         Value = dr[1].ToString(),
                         Key = Dictionary[parentCode],
-                        Ids = new List<string> {id}
+                        Ids = new List<string> {id},
+                        Fraction = fraction
                     };
                 }
 

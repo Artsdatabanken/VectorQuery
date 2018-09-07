@@ -7,5 +7,6 @@ namespace VectorQuery.Data
         public string Key;
         public string Value;
         public List<string> Ids;
+        public int Fraction;
     }
 }
