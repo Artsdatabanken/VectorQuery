@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using Npgsql;
 
 namespace VectorQuery.Data
@@ -26,42 +27,59 @@ namespace VectorQuery.Data
             while (dr.Read())
             {
                 var codeValue = dr[0].ToString();
+                var codeValueSplitUnderscore = codeValue.Split('_');
+                var codeValueIsNa = codeValueSplitUnderscore[0] == "NA";
+                var codeValueSplitDash = codeValue.Split('-');
 
-                string parentCode;
-                var codeSplitUnderscore = codeValue.Split('_');
-                var codeSplitDash = codeValue.Split('-');
+                var parentCode = GetParentCodeValue(codeValueSplitUnderscore, codeValueSplitDash);
 
-                if (codeSplitUnderscore.Length < 3)
-                    parentCode = codeSplitDash.Length > 1
-                        ? codeSplitDash[0]
-                        : codeSplitUnderscore[0];
-
-                else parentCode = codeSplitUnderscore[0] + '_' + codeSplitUnderscore[1];
-
-                var id = string.IsNullOrEmpty(dr[2].ToString()) ? dr[3].ToString() : dr[2].ToString().Replace("{", "").Replace("}", "");
-
-                var code = new Code
+                if (codeValueIsNa)
+                {
+                    var result = CreateNaCode(dr, parentCode);
+                    if (!results.ContainsKey(codeValue) || results[codeValue].Created < result.Created) results[codeValue] = result;
+                }
+                else
+                    results[codeValue] = new Code
                     {
                         Value = dr[1].ToString(),
                         Key = Dictionary[parentCode],
-                        Ids = new List<string> {id}
                     };
-
-                var created = dr[5];
-
-                if (typeof(DBNull) != created.GetType()) code.Created = (DateTime) created;
-
-                if (codeValue.StartsWith("NA_")) {code.Fraction = string.IsNullOrEmpty(dr[4].ToString()) ? 10 : int.Parse(dr[4].ToString());}
-
-                if (!results.ContainsKey(codeValue)) results[codeValue] = code;
-                else
-                {
-                    if (codeValue.StartsWith("NA_") && results[codeValue].Created < code.Created) results[codeValue] = code;
-                    else results[codeValue].Ids.Add(id);
-                }
             }
 
             return results;
+        }
+
+        private static Code CreateNaCode(IDataRecord dr, string parentCode)
+        {
+            var code = new Code
+            {
+                Value = dr[1].ToString(),
+                Key = Dictionary[parentCode],
+                Id = dr[2].ToString().Replace("{", "").Replace("}", "")
+            };
+
+            if (!IsDbNull(dr[5])) code.Created = (DateTime) dr[5];
+
+            code.Fraction = IsDbNull(dr[4]) ? 10 : (int) dr[4];
+
+            return code;
+        }
+
+        private static bool IsDbNull(object tested)
+        {
+            return tested is DBNull;
+        }
+
+        private static string GetParentCodeValue(string[] codeValueSplitUnderscore, string[] codeValueSplitDash)
+        {
+            string parentCode;
+            if (codeValueSplitUnderscore.Length < 3)
+                parentCode = codeValueSplitDash.Length > 1
+                    ? codeValueSplitDash[0]
+                    : codeValueSplitUnderscore[0];
+
+            else parentCode = codeValueSplitUnderscore[0] + '_' + codeValueSplitUnderscore[1];
+            return parentCode;
         }
     }
 }

@@ -7,7 +7,7 @@ namespace VectorQuery.Data
     {
         public string Key;
         public string Value;
-        public List<string> Ids;
+        public string Id;
         public int Fraction;
         public DateTime Created;
     }
