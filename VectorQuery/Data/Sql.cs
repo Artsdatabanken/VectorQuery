@@ -34,7 +34,7 @@ namespace VectorQuery.Data
 
         public static string CreateIntersectQuery(string queryGeometry)
         {
-            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d, data.prefix p WHERE ST_Intersects(g.geography, {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id and d.prefix_id = p.id";
+            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d, data.prefix p WHERE ST_Intersects(g.geography, {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id and d.prefix_id = p.id";
         }
 
         public static Dictionary<string, Code> Execute(NpgsqlCommand cmd)

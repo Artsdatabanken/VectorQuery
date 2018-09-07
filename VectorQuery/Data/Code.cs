@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace VectorQuery.Data
 {
@@ -8,5 +9,6 @@ namespace VectorQuery.Data
         public string Value;
         public List<string> Ids;
         public int Fraction;
+        public DateTime Created;
     }
 }
