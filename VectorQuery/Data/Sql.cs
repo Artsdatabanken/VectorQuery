@@ -34,7 +34,16 @@ namespace VectorQuery.Data
 
         public static string CreateIntersectQuery(string queryGeometry)
         {
-            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d, data.prefix p WHERE ST_Intersects(g.geography, {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id and d.prefix_id = p.id";
+            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created " +
+                   $"FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d, data.prefix p " +
+                   $"WHERE ST_Intersects(g.geography, {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id and d.prefix_id = p.id";
+        }
+
+        public static string CreateIntersectQueryUtm(string queryGeometry)
+        {
+            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created " +
+                   $"FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d, data.prefix p " +
+                   $"WHERE ST_Intersects(ST_Transform(g.geography::geometry, 25833), {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id and d.prefix_id = p.id";
         }
 
         public static Dictionary<string, Code> Execute(NpgsqlCommand cmd)
@@ -53,9 +62,19 @@ namespace VectorQuery.Data
             return Execute(GetCmd(CreateIntersectQuery(queryGeometry)));
         }
 
+        public static Dictionary<string, Code> GetIntersectingCodesUtm(string queryGeometry)
+        {
+            return Execute(GetCmd(CreateIntersectQueryUtm(queryGeometry)));
+        }
+
         internal static Dictionary<string, Code> GetIntersectingCodes(string queryGeometry, string prefix)
         {
             return Execute(GetCmd(CreateIntersectQuery(queryGeometry) + $" and p.value in ({Fnuttify(prefix)})"));
+        }
+
+        internal static Dictionary<string, Code> GetIntersectingCodesUtm(string queryGeometry, string prefix)
+        {
+            return Execute(GetCmd(CreateIntersectQueryUtm(queryGeometry) + $" and p.value in ({Fnuttify(prefix)})"));
         }
 
         private static string Fnuttify(string prefix)
@@ -66,6 +85,11 @@ namespace VectorQuery.Data
         public static string CreatePoint(double x, double y)
         {
             return $"ST_GeomFromText(\'POINT({x} {y})\', 4326)";
+        }
+
+        public static string CreateRadius(double x, double y, double radius)
+        {
+            return $"ST_Buffer(ST_Transform(ST_GeomFromText(\'POINT({x} {y})\', 4326), 25833), {radius}, 'quad_segs=8')";
         }
 
         public static string CreateArea(double minx, double miny, double maxx, double maxy)

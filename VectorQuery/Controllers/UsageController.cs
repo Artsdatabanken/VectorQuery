@@ -16,7 +16,9 @@ namespace VectorQuery.Controllers
                 {"ogapi/Codes/x/y", "Returns codes and geometries for a point in wgs84 coordinates"},
                 {"ogapi/Codes/x/y/prefix", "Returns codes and geometries for a point in wgs84 coordinates by given prefix"},
                 {"ogapi/Bbox/minx/miny/maxx/maxy", "Returns codes and geometries for a bbox in wgs84 coordinates"},
-                {"ogapi/Bbox/minx/miny/maxx/maxy/prefix", "Returns codes and geometries for a bbox in wgs84 coordinates by given prefix"},
+                {"ogapi/Bbox/minx/miny/maxx/maxy/prefix", "Returns codes and geometries for a bbox in wgs84 coordinates by given prefix and radius"},
+                {"ogapi/Radius/x/y/radius", "Returns codes and geometries for a point in wgs84 coordinates"},
+                {"ogapi/Radius/x/y/radius/prefix", "Returns codes and geometries for a point in wgs84 coordinates by given prefix and radius"},
             };
         }
     }

@@ -70,16 +70,14 @@ namespace VectorQuery.Data
             return tested is DBNull;
         }
 
-        private static string GetParentCodeValue(string[] codeValueSplitUnderscore, string[] codeValueSplitDash)
+        private static string GetParentCodeValue(IReadOnlyList<string> codeValueSplitUnderscore, IReadOnlyList<string> codeValueSplitDash)
         {
-            string parentCode;
-            if (codeValueSplitUnderscore.Length < 3)
-                parentCode = codeValueSplitDash.Length > 1
+            if (codeValueSplitUnderscore.Count < 3)
+                return codeValueSplitDash.Count > 1
                     ? codeValueSplitDash[0]
                     : codeValueSplitUnderscore[0];
 
-            else parentCode = codeValueSplitUnderscore[0] + '_' + codeValueSplitUnderscore[1];
-            return parentCode;
+            return codeValueSplitUnderscore[0] + '_' + codeValueSplitUnderscore[1];
         }
     }
 }
