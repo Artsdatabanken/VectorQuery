@@ -9,15 +9,15 @@ namespace VectorQuery.Controllers
     public class RadiusController : ControllerBase
     {
         [HttpGet("{x}/{y}/{radius}")]
-        public Dictionary<string, Code> Get(double x, double y, double radius)
+        public List<Code> Get(double x, double y, double radius)
         {
             return Sql.GetIntersectingCodesUtm(Sql.CreateRadius(x, y, radius));
         }
 
-        [HttpGet("{x}/{y}/{radius}/{prefix}")]
-        public Dictionary<string, Code> Get(double x, double y, double radius, string prefix)
+        [HttpGet("{x}/{y}/{radius}/{codes}")]
+        public List<Code> Get(double x, double y, double radius, string codes)
         {
-            return Sql.GetIntersectingCodesUtm(Sql.CreateRadius(x, y, radius), prefix);
+            return Sql.GetIntersectingCodesUtm(Sql.CreateRadius(x, y, radius), codes.Split(','));
         }
     }
 }

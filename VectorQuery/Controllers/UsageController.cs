@@ -14,11 +14,11 @@ namespace VectorQuery.Controllers
             return new Dictionary<string, string>
             {
                 {"ogapi/Codes/x/y", "Returns codes and geometries for a point in wgs84 coordinates"},
-                {"ogapi/Codes/x/y/prefix", "Returns codes and geometries for a point in wgs84 coordinates by given prefix"},
+                {"ogapi/Codes/x/y/codes", "Returns codes and geometries for a point in wgs84 coordinates by given codes"},
                 {"ogapi/Bbox/minx/miny/maxx/maxy", "Returns codes and geometries for a bbox in wgs84 coordinates"},
-                {"ogapi/Bbox/minx/miny/maxx/maxy/prefix", "Returns codes and geometries for a bbox in wgs84 coordinates by given prefix and radius"},
+                {"ogapi/Bbox/minx/miny/maxx/maxy/codes", "Returns codes and geometries for a bbox in wgs84 coordinates by given codes and radius"},
                 {"ogapi/Radius/x/y/radius", "Returns codes and geometries for a point in wgs84 coordinates"},
-                {"ogapi/Radius/x/y/radius/prefix", "Returns codes and geometries for a point in wgs84 coordinates by given prefix and radius"},
+                {"ogapi/Radius/x/y/radius/codes", "Returns codes and geometries for a point in wgs84 coordinates by given codes and radius"},
             };
         }
     }

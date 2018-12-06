@@ -34,19 +34,36 @@ namespace VectorQuery.Data
 
         public static string CreateIntersectQuery(string queryGeometry)
         {
-            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created " +
-                   $"FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d, data.prefix p " +
-                   $"WHERE ST_Intersects(g.geography, {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id and d.prefix_id = p.id";
+            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created, c.predecessor " +
+                   $"FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d " +
+                   $"WHERE ST_Intersects(g.geography, {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id";
         }
 
         public static string CreateIntersectQueryUtm(string queryGeometry)
         {
-            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created " +
-                   $"FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d, data.prefix p " +
-                   $"WHERE ST_Intersects(ST_Transform(g.geography::geometry, 25833), {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id and d.prefix_id = p.id";
+            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created, c.predecessor " +
+                   $"FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d " +
+                   $"WHERE ST_Intersects(ST_Transform(g.geography::geometry, 25833), {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id";
         }
 
-        public static Dictionary<string, Code> Execute(NpgsqlCommand cmd)
+        public static string CreateRecursiceJoinForCode(string[] code)
+        {
+            var recursiveJoin = $"SELECT id from (";
+            for (var i = 0; i < code.Length; i++)
+            {
+                recursiveJoin += $"SELECT r{i}.id from (";
+                recursiveJoin +=
+                    $"WITH RECURSIVE q{i} AS (SELECT id, code FROM data.codes WHERE code = '{code[i]}' UNION ALL " +
+                    $"SELECT m.id, m.code FROM data.codes m JOIN q{i} ON m.predecessor = q{i}.code) SELECT * FROM q{i}";
+
+                recursiveJoin += $") as r{i}";
+                if (i < code.Length - 1) recursiveJoin += " UNION ALL ";
+            }
+
+            return recursiveJoin + ") as ru";
+        }
+
+        public static List<Code> Execute(NpgsqlCommand cmd)
         {
             var dr = cmd.ExecuteReader();
 
@@ -57,24 +74,24 @@ namespace VectorQuery.Data
             return results;
         }
 
-        public static Dictionary<string, Code> GetIntersectingCodes(string queryGeometry)
+        public static List<Code> GetIntersectingCodes(string queryGeometry)
         {
             return Execute(GetCmd(CreateIntersectQuery(queryGeometry)));
         }
 
-        public static Dictionary<string, Code> GetIntersectingCodesUtm(string queryGeometry)
+        public static List<Code> GetIntersectingCodesUtm(string queryGeometry)
         {
             return Execute(GetCmd(CreateIntersectQueryUtm(queryGeometry)));
         }
 
-        internal static Dictionary<string, Code> GetIntersectingCodes(string queryGeometry, string prefix)
+        internal static List<Code> GetIntersectingCodes(string queryGeometry, string[] codes)
         {
-            return Execute(GetCmd(CreateIntersectQuery(queryGeometry) + $" and p.value in ({Fnuttify(prefix)})"));
+            return Execute(GetCmd(CreateIntersectQuery(queryGeometry) + $" and c.id in ({CreateRecursiceJoinForCode(codes)})"));
         }
 
-        internal static Dictionary<string, Code> GetIntersectingCodesUtm(string queryGeometry, string prefix)
+        internal static List<Code> GetIntersectingCodesUtm(string queryGeometry, string[] codes)
         {
-            return Execute(GetCmd(CreateIntersectQueryUtm(queryGeometry) + $" and p.value in ({Fnuttify(prefix)})"));
+            return Execute(GetCmd(CreateIntersectQueryUtm(queryGeometry) + $" and c.id in ({CreateRecursiceJoinForCode(codes)})"));
         }
 
         private static string Fnuttify(string prefix)

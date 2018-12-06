@@ -20,7 +20,7 @@ namespace VectorQuery.Data
             cmdCodes.Connection?.Close();
         }
 
-        public static Dictionary<string, Code> ReadResults(NpgsqlDataReader dr)
+        public static List<Code> ReadResults(NpgsqlDataReader dr)
         {
             var results = new Dictionary<string, Code>();
 
@@ -32,31 +32,49 @@ namespace VectorQuery.Data
 
                 var codeValueIsNa = codeValueSplitDash[0] == "NA";
 
-                var parentCode = GetParentCodeValue(codeValueSplitDash);
-
                 if (codeValueIsNa)
                 {
-                    var result = CreateNaCode(dr, parentCode);
+                    var result = CreateNaCode(dr);
                     if (!results.ContainsKey(codeValue) || results[codeValue].Created < result.Created) results[codeValue] = result;
                 }
                 else
+                {
+                    var predecessor = dr[6].ToString();
                     results[codeValue] = new Code
                     {
                         Value = dr[1].ToString(),
-                        Key = Dictionary[parentCode],
+                        Key = dr[0].ToString(), 
+                        Predecessor = predecessor
                     };
+                }
             }
 
-            return results;
+            var resultsList = results.Values.ToList();
+
+            return StructureResults(results.Values.ToList(), resultsList.Where(r => r.Predecessor == "~").ToList() );
         }
 
-        private static Code CreateNaCode(IDataRecord dr, string parentCode)
+        private static List<Code> StructureResults(IReadOnlyCollection<Code> results, IReadOnlyCollection<Code> predecessors)
         {
+            foreach (var predecessor in predecessors)
+            {
+                predecessor.Successors = results.Where(r => r.Predecessor == predecessor.Key).ToList();
+                StructureResults(results, predecessor.Successors);
+                
+            }
+
+            return (List<Code>) predecessors;
+        }
+
+        private static Code CreateNaCode(IDataRecord dr)
+        {
+            var predecessor = dr[6].ToString();
             var code = new Code
             {
                 Value = dr[1].ToString(),
-                Key = Dictionary[parentCode],
-                Id = dr[2].ToString()
+                Key = dr[0].ToString(),
+                Id = dr[2].ToString(),
+                Predecessor = predecessor
             };
 
             if (!IsDbNull(dr[5])) code.Created = (DateTime) dr[5];
