@@ -1,7 +1,6 @@
 ﻿using Npgsql;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Microsoft.Extensions.Configuration;
 
 namespace VectorQuery.Data
@@ -35,49 +34,21 @@ namespace VectorQuery.Data
 
         public static string CreateIntersectQuery(string queryGeometry)
         {
-            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created, c.predecessor " +
-                   $"FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d " +
-                   $"WHERE ST_Intersects(g.geography, {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id";
+            return $"SELECT g.id FROM data.geometry g WHERE ST_Intersects(g.geography, {queryGeometry})";
         }
 
         public static string CreateIntersectQueryUtm(string queryGeometry)
         {
-            return $"SELECT c.code, c.title, l_g.localid, g.id, c_g.fraction, c_g.created, c.predecessor " +
-                   $"FROM data.geometry g left join data.localid_geometry l_g on g.id = l_g.geometry_id, data.codes_geometry c_g, data.codes c, data.dataset d " +
-                   $"WHERE ST_Intersects(ST_Transform(g.geography::geometry, 25833), {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id";
+            return
+                $"SELECT g.id FROM data.geometry g WHERE ST_Intersects(ST_Transform(g.geography::geometry, 25833), {queryGeometry})";
         }
 
-        public static string CreateRecursiceJoinForCode(string[] codes)
-        {
-            var cleanCodes = CheckForLegalCodes(codes);
 
-            if (cleanCodes.Length == 0) return "SELECT 0";
-
-            var recursiveJoin = $"SELECT id from (";
-            for (var i = 0; i < cleanCodes.Length; i++)
-            {
-                recursiveJoin += $"SELECT r{i}.id from (";
-                recursiveJoin +=
-                    $"WITH RECURSIVE q{i} AS (SELECT id, code FROM data.codes WHERE code = '{cleanCodes[i]}' UNION ALL " +
-                    $"SELECT m.id, m.code FROM data.codes m JOIN q{i} ON m.predecessor = q{i}.code) SELECT * FROM q{i}";
-
-                recursiveJoin += $") as r{i}";
-                if (i < cleanCodes.Length - 1) recursiveJoin += " UNION ALL ";
-            }
-
-            return recursiveJoin + ") as ru";
-        }
-
-        private static string[] CheckForLegalCodes(IEnumerable<string> codes)
-        {
-            return codes.Where(code => Codes.CodesDictionary.ContainsKey(code)).ToArray();
-        }
-
-        public static List<Code> Execute(NpgsqlCommand cmd)
+        public static List<Code> Execute(NpgsqlCommand cmd, string[] codes = null)
         {
             var dr = cmd.ExecuteReader();
 
-            var results = Codes.ReadResults(dr);
+            var results = codes == null ? Codes.ReadResults(dr) : Codes.ReadResults(dr, codes);
 
             cmd.Connection?.Close();
 
@@ -96,18 +67,14 @@ namespace VectorQuery.Data
 
         internal static List<Code> GetIntersectingCodes(string queryGeometry, string[] codes)
         {
-            return Execute(GetCmd(CreateIntersectQuery(queryGeometry) + $" and c.id in ({CreateRecursiceJoinForCode(codes)})"));
+            return Execute(GetCmd(CreateIntersectQuery(queryGeometry)), codes);
         }
 
         internal static List<Code> GetIntersectingCodesUtm(string queryGeometry, string[] codes)
         {
-            return Execute(GetCmd(CreateIntersectQueryUtm(queryGeometry) + $" and c.id in ({CreateRecursiceJoinForCode(codes)})"));
+            return Execute(GetCmd(CreateIntersectQueryUtm(queryGeometry)), codes);
         }
 
-        private static string Fnuttify(string prefix)
-        {
-            return "'" + prefix.Replace(",", "','").TrimEnd('\'').TrimEnd(',') + "'";
-        }
 
         public static string CreatePoint(double x, double y)
         {
@@ -116,7 +83,8 @@ namespace VectorQuery.Data
 
         public static string CreateRadius(double x, double y, double radius)
         {
-            return $"ST_Buffer(ST_Transform(ST_GeomFromText(\'POINT({x} {y})\', 4326), 25833), {radius}, 'quad_segs=8')";
+            return
+                $"ST_Buffer(ST_Transform(ST_GeomFromText(\'POINT({x} {y})\', 4326), 25833), {radius}, 'quad_segs=8')";
         }
 
         public static string CreateArea(double minx, double miny, double maxx, double maxy)

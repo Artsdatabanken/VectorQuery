@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using VectorQuery.Data;
 
 namespace VectorQuery
 {
@@ -13,6 +14,8 @@ namespace VectorQuery
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            Codes.Load();
         }
 
         public IConfiguration Configuration { get; }
