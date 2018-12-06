@@ -24,34 +24,47 @@ namespace VectorQuery.Data
         {
             var results = new Dictionary<string, Code>();
 
+            var predecessors = new Dictionary<string, bool>();
+
+            var successors = new Dictionary<string, bool>();
+
             while (dr.Read())
             {
-                var codeValue = dr[0].ToString();
+                var result = CreateCodeFromDataReader(dr);
 
-                var codeValueSplitDash = codeValue.Split('-');
+                predecessors[result.Predecessor] = true;
+                successors[result.Key] = true;
 
-                var codeValueIsNa = codeValueSplitDash[0] == "NA";
+                if (result.Key.Split('-')[0] == "NA") AddResultIfNewOrNewer(results, CreateNaCode(dr, result));
 
-                if (codeValueIsNa)
-                {
-                    var result = CreateNaCode(dr);
-                    if (!results.ContainsKey(codeValue) || results[codeValue].Created < result.Created) results[codeValue] = result;
-                }
-                else
-                {
-                    var predecessor = dr[6].ToString();
-                    results[codeValue] = new Code
-                    {
-                        Value = dr[1].ToString(),
-                        Key = dr[0].ToString(), 
-                        Predecessor = predecessor
-                    };
-                }
+                else results[result.Key] = result;
             }
 
             var resultsList = results.Values.ToList();
 
-            return StructureResults(results.Values.ToList(), resultsList.Where(r => r.Predecessor == "~").ToList() );
+            return StructureResults(resultsList, FindRootNodes(resultsList, predecessors.Keys.ToList(), successors.Keys.ToList()) );
+        }
+
+        private static void AddResultIfNewOrNewer(IDictionary<string, Code> results, Code result)
+        {
+            if (!results.ContainsKey(result.Key) || results[result.Key].Created < result.Created) results[result.Key] = result;
+        }
+
+        private static Code CreateCodeFromDataReader(IDataRecord dr)
+        {
+            return new Code
+            {
+                Key = dr[0].ToString(),
+                Value = dr[1].ToString(),
+                Predecessor = dr[6].ToString()
+            };
+        }
+
+        private static List<Code> FindRootNodes(IEnumerable<Code> resultsList,  IEnumerable<string> predecessors, ICollection<string> successors)
+        {
+            predecessors = predecessors.Where(p => !successors.Contains(p));
+
+            return resultsList.Where(r => predecessors.Contains(r.Predecessor)).ToList();
         }
 
         private static List<Code> StructureResults(IReadOnlyCollection<Code> results, IReadOnlyCollection<Code> predecessors)
@@ -61,17 +74,10 @@ namespace VectorQuery.Data
             return predecessors.ToList();
         }
 
-        private static Code CreateNaCode(IDataRecord dr)
+        private static Code CreateNaCode(IDataRecord dr, Code code)
         {
-            var predecessor = dr[6].ToString();
-            var code = new Code
-            {
-                Value = dr[1].ToString(),
-                Key = dr[0].ToString(),
-                Id = dr[2].ToString(),
-                Predecessor = predecessor
-            };
-
+            code.Id = dr[2].ToString();
+ 
             if (!IsDbNull(dr[5])) code.Created = (DateTime) dr[5];
 
             code.Fraction = IsDbNull(dr[4]) ? 10 : (int) dr[4];
