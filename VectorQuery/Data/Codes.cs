@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using Npgsql;
-
 namespace VectorQuery.Data
 {
     public static class Codes
@@ -27,11 +27,12 @@ namespace VectorQuery.Data
             while (dr.Read())
             {
                 var codeValue = dr[0].ToString();
-                var codeValueSplitUnderscore = codeValue.Split('_');
-                var codeValueIsNa = codeValueSplitUnderscore[0] == "NA";
+
                 var codeValueSplitDash = codeValue.Split('-');
 
-                var parentCode = GetParentCodeValue(codeValueSplitUnderscore, codeValueSplitDash);
+                var codeValueIsNa = codeValueSplitDash[0] == "NA";
+
+                var parentCode = GetParentCodeValue(codeValueSplitDash);
 
                 if (codeValueIsNa)
                 {
@@ -55,7 +56,7 @@ namespace VectorQuery.Data
             {
                 Value = dr[1].ToString(),
                 Key = Dictionary[parentCode],
-                Id = dr[2].ToString().Replace("{", "").Replace("}", "")
+                Id = dr[2].ToString()
             };
 
             if (!IsDbNull(dr[5])) code.Created = (DateTime) dr[5];
@@ -70,14 +71,9 @@ namespace VectorQuery.Data
             return tested is DBNull;
         }
 
-        private static string GetParentCodeValue(IReadOnlyList<string> codeValueSplitUnderscore, IReadOnlyList<string> codeValueSplitDash)
+        private static string GetParentCodeValue(IReadOnlyList<string> codeValueSplitDash)
         {
-            if (codeValueSplitUnderscore.Count < 3)
-                return codeValueSplitDash.Count > 1
-                    ? codeValueSplitDash[0]
-                    : codeValueSplitUnderscore[0];
-
-            return codeValueSplitUnderscore[0] + '_' + codeValueSplitUnderscore[1];
+            return codeValueSplitDash.Count == 1 ? codeValueSplitDash[0] : string.Join("-", codeValueSplitDash.ToArray(), 0, codeValueSplitDash.Count - 1);
         }
     }
 }
