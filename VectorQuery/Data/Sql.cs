@@ -1,6 +1,7 @@
 ﻿using Npgsql;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.Extensions.Configuration;
 
 namespace VectorQuery.Data
@@ -46,21 +47,30 @@ namespace VectorQuery.Data
                    $"WHERE ST_Intersects(ST_Transform(g.geography::geometry, 25833), {queryGeometry}) and c_g.geometry_id = g.id and c_g.codes_id = c.id and g.dataset_id = d.id";
         }
 
-        public static string CreateRecursiceJoinForCode(string[] code)
+        public static string CreateRecursiceJoinForCode(string[] codes)
         {
+            var cleanCodes = CheckForLegalCodes(codes);
+
+            if (cleanCodes.Length == 0) return "SELECT 0";
+
             var recursiveJoin = $"SELECT id from (";
-            for (var i = 0; i < code.Length; i++)
+            for (var i = 0; i < cleanCodes.Length; i++)
             {
                 recursiveJoin += $"SELECT r{i}.id from (";
                 recursiveJoin +=
-                    $"WITH RECURSIVE q{i} AS (SELECT id, code FROM data.codes WHERE code = '{code[i]}' UNION ALL " +
+                    $"WITH RECURSIVE q{i} AS (SELECT id, code FROM data.codes WHERE code = '{cleanCodes[i]}' UNION ALL " +
                     $"SELECT m.id, m.code FROM data.codes m JOIN q{i} ON m.predecessor = q{i}.code) SELECT * FROM q{i}";
 
                 recursiveJoin += $") as r{i}";
-                if (i < code.Length - 1) recursiveJoin += " UNION ALL ";
+                if (i < cleanCodes.Length - 1) recursiveJoin += " UNION ALL ";
             }
 
             return recursiveJoin + ") as ru";
+        }
+
+        private static string[] CheckForLegalCodes(IEnumerable<string> codes)
+        {
+            return codes.Where(code => Codes.CodesDictionary.ContainsKey(code)).ToArray();
         }
 
         public static List<Code> Execute(NpgsqlCommand cmd)
