@@ -56,14 +56,9 @@ namespace VectorQuery.Data
 
         private static List<Code> StructureResults(IReadOnlyCollection<Code> results, IReadOnlyCollection<Code> predecessors)
         {
-            foreach (var predecessor in predecessors)
-            {
-                predecessor.Successors = results.Where(r => r.Predecessor == predecessor.Key).ToList();
-                StructureResults(results, predecessor.Successors);
-                
-            }
+            foreach (var predecessor in predecessors) predecessor.Successors = StructureResults(results, results.Where(r => r.Predecessor == predecessor.Key).ToList());
 
-            return (List<Code>) predecessors;
+            return predecessors.ToList();
         }
 
         private static Code CreateNaCode(IDataRecord dr)
