@@ -162,7 +162,7 @@ namespace VectorQuery.Data
             var rootNodes = new Dictionary<string, Code>();
             foreach (var code in codes)
             {
-                var rootnode = FindRootNodes(structuredResults, code);
+                var rootnode = FindRootNodes(structuredResults, code.ToUpperInvariant());
                 if(rootnode != null) rootNodes[code.ToUpperInvariant()] = rootnode;
             }
 
@@ -173,7 +173,7 @@ namespace VectorQuery.Data
         {
             if (results.Keys.Contains(code)) return results[code];
 
-            foreach (var result in results) return string.Equals(code, result.Key, StringComparison.CurrentCultureIgnoreCase) ? result.Value : FindRootNodes(result.Value.Values, code);
+            foreach (var result in results) return string.Equals(code, result.Key) ? result.Value : FindRootNodes(result.Value.Values, code);
 
             return null;
         }
