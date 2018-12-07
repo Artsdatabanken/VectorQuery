@@ -9,8 +9,8 @@ namespace VectorQuery.Data
         internal string Key;
         public string Title;
         public string Id;
-        public int Fraction;
-        public DateTime Created;
+        public int? Fraction;
+        public DateTime? Created;
         public Dictionary<string, Code> Values;
     }
 }

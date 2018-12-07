@@ -23,10 +23,9 @@ namespace VectorQuery.Data
         {
             FillCodesDictionary();
 
-            FillGeometryDictionary();
-
             FillGeometryLocalids();
 
+            FillGeometryDictionary();
         }
 
 
@@ -48,38 +47,23 @@ namespace VectorQuery.Data
                 var codeId = int.Parse(dr[1].ToString());
 
                 if (!GeometryCodesIds.ContainsKey(geometryId)) GeometryCodesIds[geometryId] = new List<int>();
-
+                
                 GeometryCodesIds[geometryId].Add(codeId);
-
+                
                 if (!GeometryCodes.ContainsKey(geometryId)) GeometryCodes[geometryId] = new List<Code>();
 
                 var created = dr[2].ToString();
 
-                var fraction = string.IsNullOrEmpty(dr[3].ToString()) ? 0 : Convert.ToInt32(dr[3].ToString());
-
                 var key = dr[4].ToString();
-
-                if (string.IsNullOrEmpty(created))
-                {
-
-                    GeometryCodes[geometryId].Add(new Code
-                    {
-                        Fraction = fraction,
-                        Key = key,
-                        Predecessor = CodesPredecessors[key],
-                        Title = CodeTitles[key]
-                    });
-
-                    continue;
-                }
 
                 GeometryCodes[geometryId].Add(new Code
                 {
-                    Created = Convert.ToDateTime(created),
-                    Fraction = fraction,
+                    Created = string.IsNullOrEmpty(created) ? (DateTime?) null : Convert.ToDateTime(created),
+                    Fraction = string.IsNullOrEmpty(dr[3].ToString()) ? (int?) null : Convert.ToInt32(dr[3].ToString()),
                     Key = key,
                     Predecessor = CodesPredecessors[key],
-                    Title = CodeTitles[key]
+                    Title = CodeTitles[key],
+                    Id = GeometryLocalids.Keys.Contains(geometryId) ? GeometryLocalids[geometryId] : null
                 });
             }
 
@@ -139,10 +123,7 @@ namespace VectorQuery.Data
             {
                 var geometryId = int.Parse(dr[0].ToString());
 
-                if (GeometryCodes.ContainsKey(geometryId))
-                {
-                    AddResults(GeometryCodes[geometryId], results);
-                }
+                if (GeometryCodes.ContainsKey(geometryId)) AddResults(GeometryCodes[geometryId], results);
             }
 
             return FixResults(results, codes);
@@ -158,7 +139,6 @@ namespace VectorQuery.Data
 
         private static Dictionary<string, Code> FixResults(Dictionary<string, Code> results, string[] codes = null)
         {
-
             var predecessors = new Dictionary<string, bool>();
 
             var successors = new Dictionary<string, bool>();
@@ -173,23 +153,30 @@ namespace VectorQuery.Data
             var structuredResults = StructureResults(results,
                 FindRootNodes(results, predecessors.Keys, successors.Keys));
 
-
-            return structuredResults;
-            //return codes == null ? structuredResults : RemoveSuperfluousResults(structuredResults, codes);
+            return codes == null ? structuredResults : RemoveSuperfluousResults(structuredResults, codes);
         }
 
-        //private static Dictionary<string, Code> RemoveSuperfluousResults(IReadOnlyCollection<Code> structuredResults,
-        //    IEnumerable<string> codes)
-        //{
-        //    return codes.Select(code => FindRootNodes(structuredResults, code)).Where(rootnode => rootnode != null)
-        //        .ToList();
-        //}
+        private static Dictionary<string, Code> RemoveSuperfluousResults(Dictionary<string, Code> structuredResults,
+            IEnumerable<string> codes)
+        {
+            var rootNodes = new Dictionary<string, Code>();
+            foreach (var code in codes)
+            {
+                var rootnode = FindRootNodes(structuredResults, code);
+                if(rootnode != null) rootNodes[code.ToUpperInvariant()] = rootnode;
+            }
 
-        //private static Code FindRootNodes(Dictionary<string, Code> results, string code)
-        //{
-        //    return (from result in results select result.Key == code ? result : FindRootNodes(result.Values, code))
-        //        .FirstOrDefault();
-        //}
+            return rootNodes;
+        }
+
+        private static Code FindRootNodes(Dictionary<string, Code> results, string code)
+        {
+            if (results.Keys.Contains(code)) return results[code];
+
+            foreach (var result in results) return string.Equals(code, result.Key, StringComparison.CurrentCultureIgnoreCase) ? result.Value : FindRootNodes(result.Value.Values, code);
+
+            return null;
+        }
 
         private static Dictionary<string, Code> FindRootNodes(Dictionary<string, Code> resultsList, IEnumerable<string> predecessors,
             ICollection<string> successors)
