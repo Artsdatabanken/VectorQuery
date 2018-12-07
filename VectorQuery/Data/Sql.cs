@@ -44,7 +44,7 @@ namespace VectorQuery.Data
         }
 
 
-        public static List<Code> Execute(NpgsqlCommand cmd, string[] codes = null)
+        public static Dictionary<string, Code> Execute(NpgsqlCommand cmd, string[] codes = null)
         {
             var dr = cmd.ExecuteReader();
 
@@ -55,22 +55,22 @@ namespace VectorQuery.Data
             return results;
         }
 
-        public static List<Code> GetIntersectingCodes(string queryGeometry)
+        public static Dictionary<string, Code> GetIntersectingCodes(string queryGeometry)
         {
             return Execute(GetCmd(CreateIntersectQuery(queryGeometry)));
         }
 
-        public static List<Code> GetIntersectingCodesUtm(string queryGeometry)
+        public static Dictionary<string, Code> GetIntersectingCodesUtm(string queryGeometry)
         {
             return Execute(GetCmd(CreateIntersectQueryUtm(queryGeometry)));
         }
 
-        internal static List<Code> GetIntersectingCodes(string queryGeometry, string[] codes)
+        internal static Dictionary<string, Code> GetIntersectingCodes(string queryGeometry, string[] codes)
         {
             return Execute(GetCmd(CreateIntersectQuery(queryGeometry)), codes);
         }
 
-        internal static List<Code> GetIntersectingCodesUtm(string queryGeometry, string[] codes)
+        internal static Dictionary<string, Code> GetIntersectingCodesUtm(string queryGeometry, string[] codes)
         {
             return Execute(GetCmd(CreateIntersectQueryUtm(queryGeometry)), codes);
         }

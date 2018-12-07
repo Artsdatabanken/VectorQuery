@@ -26,6 +26,7 @@ namespace VectorQuery.Data
             FillGeometryDictionary();
 
             FillGeometryLocalids();
+
         }
 
 
@@ -66,7 +67,7 @@ namespace VectorQuery.Data
                         Fraction = fraction,
                         Key = key,
                         Predecessor = CodesPredecessors[key],
-                        Value = CodeTitles[key]
+                        Title = CodeTitles[key]
                     });
 
                     continue;
@@ -78,7 +79,7 @@ namespace VectorQuery.Data
                     Fraction = fraction,
                     Key = key,
                     Predecessor = CodesPredecessors[key],
-                    Value = CodeTitles[key]
+                    Title = CodeTitles[key]
                 });
             }
 
@@ -130,7 +131,7 @@ namespace VectorQuery.Data
         }
 
 
-        public static List<Code> ReadResults(NpgsqlDataReader dr, string[] codes = null)
+        public static Dictionary<string, Code> ReadResults(NpgsqlDataReader dr, string[] codes = null)
         {
             var results = new Dictionary<string, Code>();
 
@@ -144,7 +145,7 @@ namespace VectorQuery.Data
                 }
             }
 
-            return FixResults(results.Values.ToList(), codes);
+            return FixResults(results, codes);
         }
 
         private static void AddResults(List<Code> geometryCode, IDictionary<string, Code> results)
@@ -155,7 +156,7 @@ namespace VectorQuery.Data
                     : g);
         }
 
-        private static List<Code> FixResults(IReadOnlyCollection<Code> results, string[] codes = null)
+        private static Dictionary<string, Code> FixResults(Dictionary<string, Code> results, string[] codes = null)
         {
 
             var predecessors = new Dictionary<string, bool>();
@@ -164,45 +165,48 @@ namespace VectorQuery.Data
 
             foreach (var result in results)
             {
-                predecessors[result.Predecessor] = true;
-                successors[result.Key] = true;
+                if (string.IsNullOrEmpty(result.Value.Predecessor)) continue;
+                predecessors[result.Value.Predecessor] = true;
+                successors[result.Value.Key] = true;
             }
 
             var structuredResults = StructureResults(results,
-                FindRootNodes(results, predecessors.Keys.ToList(), successors.Keys.ToList()));
+                FindRootNodes(results, predecessors.Keys, successors.Keys));
 
-            return codes == null ? structuredResults : RemoveSuperfluousResults(structuredResults, codes);
+
+            return structuredResults;
+            //return codes == null ? structuredResults : RemoveSuperfluousResults(structuredResults, codes);
         }
 
-        private static List<Code> RemoveSuperfluousResults(IReadOnlyCollection<Code> structuredResults,
-            IEnumerable<string> codes)
-        {
-            return codes.Select(code => FindRootNodes(structuredResults, code)).Where(rootnode => rootnode != null)
-                .ToList();
-        }
+        //private static Dictionary<string, Code> RemoveSuperfluousResults(IReadOnlyCollection<Code> structuredResults,
+        //    IEnumerable<string> codes)
+        //{
+        //    return codes.Select(code => FindRootNodes(structuredResults, code)).Where(rootnode => rootnode != null)
+        //        .ToList();
+        //}
 
-        private static Code FindRootNodes(IEnumerable<Code> results, string code)
-        {
-            return (from result in results select result.Key == code ? result : FindRootNodes(result.Successors, code))
-                .FirstOrDefault();
-        }
+        //private static Code FindRootNodes(Dictionary<string, Code> results, string code)
+        //{
+        //    return (from result in results select result.Key == code ? result : FindRootNodes(result.Values, code))
+        //        .FirstOrDefault();
+        //}
 
-        private static List<Code> FindRootNodes(IEnumerable<Code> resultsList, IEnumerable<string> predecessors,
+        private static Dictionary<string, Code> FindRootNodes(Dictionary<string, Code> resultsList, IEnumerable<string> predecessors,
             ICollection<string> successors)
         {
             predecessors = predecessors.Where(p => !successors.Contains(p));
 
-            return resultsList.Where(r => predecessors.Contains(r.Predecessor)).ToList();
+            return new Dictionary<string, Code>(resultsList.Where(r => predecessors.Contains(r.Key)));
         }
 
-        private static List<Code> StructureResults(IReadOnlyCollection<Code> results,
-            IReadOnlyCollection<Code> predecessors)
+        private static Dictionary<string, Code> StructureResults( Dictionary<string, Code> results,
+            Dictionary<string, Code> predecessors)
         {
             foreach (var predecessor in predecessors)
-                predecessor.Successors =
-                    StructureResults(results, results.Where(r => r.Predecessor == predecessor.Key).ToList());
+                predecessor.Value.Values =
+                    StructureResults(results, new Dictionary<string, Code>(results.Where(r => r.Value.Predecessor == predecessor.Key)));
 
-            return predecessors.ToList();
+            return predecessors;
         }
     }
 }

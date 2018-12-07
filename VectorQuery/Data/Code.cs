@@ -5,12 +5,12 @@ namespace VectorQuery.Data
 {
     public class Code
     {
-        public string Predecessor;
-        public string Key;
-        public string Value;
+        internal string Predecessor;
+        internal string Key;
+        public string Title;
         public string Id;
         public int Fraction;
         public DateTime Created;
-        public List<Code> Successors;
+        public Dictionary<string, Code> Values;
     }
 }
