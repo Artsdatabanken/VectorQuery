@@ -151,7 +151,7 @@ namespace VectorQuery.Data
             }
 
             var structuredResults = StructureResults(results,
-                FindRootNodes(results, predecessors.Keys, successors.Keys));
+                FindUltimateRootNodes(results, predecessors.Keys, successors.Keys));
 
             return codes == null ? structuredResults : RemoveSuperfluousResults(structuredResults, codes);
         }
@@ -162,23 +162,29 @@ namespace VectorQuery.Data
             var rootNodes = new Dictionary<string, Code>();
             foreach (var code in codes)
             {
-                var rootnode = FindRootNodes(structuredResults, code.ToUpperInvariant());
+                var rootnode = FindFilteredRootNode(structuredResults, code.ToUpperInvariant());
                 if(rootnode != null) rootNodes[code.ToUpperInvariant()] = rootnode;
             }
 
             return rootNodes;
         }
 
-        private static Code FindRootNodes(Dictionary<string, Code> results, string code)
+        private static Code FindFilteredRootNode(Dictionary<string, Code> results, string code)
         {
+            if (results == null) return null;
+
             if (results.Keys.Contains(code)) return results[code];
 
-            foreach (var result in results) return string.Equals(code, result.Key) ? result.Value : FindRootNodes(result.Value.Values, code);
+            foreach (var result in results.Values)
+            {
+                var rootNode = FindFilteredRootNode(result.Values, code);
+                if (rootNode != null) return rootNode;
+            }
 
             return null;
         }
 
-        private static Dictionary<string, Code> FindRootNodes(Dictionary<string, Code> resultsList, IEnumerable<string> predecessors,
+        private static Dictionary<string, Code> FindUltimateRootNodes(Dictionary<string, Code> resultsList, IEnumerable<string> predecessors,
             ICollection<string> successors)
         {
             predecessors = predecessors.Where(p => !successors.Contains(p));
@@ -190,8 +196,12 @@ namespace VectorQuery.Data
             Dictionary<string, Code> predecessors)
         {
             foreach (var predecessor in predecessors)
-                predecessor.Value.Values =
-                    StructureResults(results, new Dictionary<string, Code>(results.Where(r => r.Value.Predecessor == predecessor.Key)));
+            {
+                var nextResults =
+                    new Dictionary<string, Code>(results.Where(r => r.Value.Predecessor == predecessor.Key));
+                if (nextResults.Keys.Count > 0) predecessor.Value.Values =
+                    StructureResults(results,nextResults);
+            }
 
             return predecessors;
         }
