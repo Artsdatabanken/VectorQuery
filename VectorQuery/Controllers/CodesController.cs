@@ -9,13 +9,13 @@ namespace VectorQuery.Controllers
     public class CodesController : ControllerBase
     {
         [HttpGet("{x}/{y}")]
-        public List<Code> Get(double x, double y)
+        public Dictionary<string, Code> Get(double x, double y)
         {
             return Sql.GetIntersectingCodes(Sql.CreatePoint(x, y));
         }
 
         [HttpGet("{x}/{y}/{codes}")]
-        public List<Code> Get(double x, double y, string codes)
+        public Dictionary<string, Code> Get(double x, double y, string codes)
         {
             return Sql.GetIntersectingCodes(Sql.CreatePoint(x, y), codes.Split(','));
         }

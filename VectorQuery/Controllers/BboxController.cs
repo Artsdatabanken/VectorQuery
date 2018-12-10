@@ -9,13 +9,13 @@ namespace VectorQuery.Controllers
     public class BboxController : ControllerBase
     {
         [HttpGet("{minx}/{miny}/{maxx}/{maxy}")]
-        public List<Code> Get(double minx, double miny, double maxx, double maxy)
+        public Dictionary<string, Code> Get(double minx, double miny, double maxx, double maxy)
         {
             return Sql.GetIntersectingCodes(Sql.CreateArea(minx, miny, maxx, maxy));
         }
 
         [HttpGet("{minx}/{miny}/{maxx}/{maxy}/{codes}")]
-        public List<Code> Get(double minx, double miny, double maxx, double maxy, string codes)
+        public Dictionary<string, Code> Get(double minx, double miny, double maxx, double maxy, string codes)
         {
             return Sql.GetIntersectingCodes(Sql.CreateArea(minx, miny, maxx, maxy), codes.Split(','));
         }
