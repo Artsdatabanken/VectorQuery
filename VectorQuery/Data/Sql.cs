@@ -1,4 +1,5 @@
-﻿using Npgsql;
+﻿using System;
+using Npgsql;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Extensions.Configuration;
@@ -29,7 +30,10 @@ namespace VectorQuery.Data
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
             var configuration = builder.Build();
-            ConnectionString = configuration.GetConnectionString("postgres");
+
+            ConnectionString = Environment.GetEnvironmentVariable("postgres");
+
+            if(string.IsNullOrEmpty(ConnectionString)) ConnectionString = configuration.GetConnectionString("postgres");
         }
 
         public static string CreateIntersectQuery(string queryGeometry)
